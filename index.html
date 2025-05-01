@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Prodevopz Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: url('https://images.unsplash.com/photo-1519125323398-675f0ddb6308') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      color: white;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+    }
+
+    header {
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.5);
+      letter-spacing: 2px;
+    }
+
+    #messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .message {
+      margin: 8px 0;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      width: fit-content;
+      max-width: 80%;
+    }
+
+    #chat {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+
+    #send {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #00bcd4;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header class="glass">Prodevopz Chat</header>
+  <div id="messages" class="glass"></div>
+  <div id="chat" class="glass">
+    <input id="input" type="text" placeholder="Type a message..." />
+    <button id="send">Send</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXpJ1bDfzBqaYg4enm-GyrPdD6H_EEhUA",
+      authDomain: "chatapp-900cf.firebaseapp.com",
+      projectId: "chatapp-900cf",
+      storageBucket: "chatapp-900cf.appspot.com",
+      messagingSenderId: "461600057635",
+      appId: "1:461600057635:web:3ef8e3ded53455ef80c496",
+      measurementId: "G-TXSSBKSFCC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let username = localStorage.getItem("username");
+    if (!username) {
+      username = prompt("Enter your name:");
+      if (!username) username = "Anonymous";
+      localStorage.setItem("username", username);
+    }
+
+    const messagesDiv = document.getElementById("messages");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
+
+    sendBtn.onclick = async () => {
+      const text = input.value.trim();
+      if (text) {
+        await addDoc(collection(db, "messages"), {
+          user: username,
+          text: text,
+          timestamp: Date.now()
+        });
+        input.value = "";
+      }
+    };
+
+    input.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendBtn.click();
+    });
+
+    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    onSnapshot(q, snapshot => {
+      messagesDiv.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const msg = document.createElement("div");
+        msg.className = "message";
+        msg.innerHTML = `<strong>${data.user}:</strong> ${data.text}`;
+        messagesDiv.appendChild(msg);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+  </script>
+</body>
+</html>
