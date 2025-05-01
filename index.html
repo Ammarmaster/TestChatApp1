@@ -1,116 +1,186 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Prodevopz Chat - Auth</title>
+  <title>Prodevopz Dark Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
-      font-family: sans-serif;
-      background: url('https://source.unsplash.com/1600x900/?technology') no-repeat center center fixed;
-      background-size: cover;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
     }
-    .auth-container {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(15px);
-      border-radius: 15px;
-      padding: 30px;
-      width: 300px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      text-align: center;
-      color: white;
-    }
-    h2 {
-      margin-bottom: 10px;
-    }
-    input, button {
+
+    .container {
       width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
       padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      box-sizing: border-box;
     }
-    button {
-      background-color: #1f8ef1;
-      color: white;
-      cursor: pointer;
-    }
-    .toggle {
-      color: #ddd;
-      text-decoration: underline;
-      cursor: pointer;
-      font-size: 13px;
-      margin-top: 10px;
-    }
+
     .branding {
       font-size: 24px;
+      text-align: center;
       font-weight: bold;
+      color: #00bcd4;
       margin-bottom: 10px;
-      color: #00ffe0;
+    }
+
+    input, button {
+      padding: 12px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    input {
+      background-color: #1f1f1f;
+      color: #fff;
+      border: 1px solid #444;
+    }
+
+    button {
+      background-color: #00bcd4;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      background-color: #1e1e1e;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      background-color: #333;
+      margin-bottom: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 75%;
+      color: #fff;
+    }
+
+    .own {
+      background-color: #00695c;
+      align-self: flex-end;
+    }
+
+    #chatSection {
+      display: none;
+      flex-direction: column;
+      height: 100%;
     }
   </style>
 </head>
 <body>
+  <div class="container">
+    <div class="branding">Prodevopz Dark Chat</div>
 
-  <div class="auth-container">
-    <div class="branding">Prodevopz</div>
-    <h2 id="formTitle">Login</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="handleAuth()">Login</button>
-    <div class="toggle" onclick="toggleForm()">Don't have an account? Sign up</div>
+    <div id="authSection">
+      <input type="text" id="username" placeholder="Enter Username">
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <button onclick="register()">Register</button>
+      <button onclick="login()">Login</button>
+    </div>
+
+    <div id="chatSection">
+      <div id="messages"></div>
+      <input type="text" id="messageInput" placeholder="Type message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXpJ1bDfzBqaYg4enm-GyrPdD6H_EEhUA",
       authDomain: "chatapp-900cf.firebaseapp.com",
       projectId: "chatapp-900cf",
-      storageBucket: "chatapp-900cf.firebasestorage.app",
+      storageBucket: "chatapp-900cf.appspot.com",
       messagingSenderId: "461600057635",
-      appId: "1:461600057635:web:3ef8e3ded53455ef80c496",
-      measurementId: "G-TXSSBKSFCC"
+      appId: "1:461600057635:web:3ef8e3ded53455ef80c496"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
 
-    let isLogin = true;
+    let currentUsername = "";
 
-    window.toggleForm = () => {
-      isLogin = !isLogin;
-      document.getElementById("formTitle").innerText = isLogin ? "Login" : "Sign Up";
-      document.querySelector("button").innerText = isLogin ? "Login" : "Sign Up";
-      document.querySelector(".toggle").innerText = isLogin
-        ? "Don't have an account? Sign up"
-        : "Already have an account? Login";
-    };
-
-    window.handleAuth = async () => {
+    async function register() {
+      const username = document.getElementById("username").value;
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
 
-      try {
-        if (isLogin) {
-          await signInWithEmailAndPassword(auth, email, password);
-          alert("Logged in successfully!");
-        } else {
-          await createUserWithEmailAndPassword(auth, email, password);
-          alert("Account created successfully!");
-        }
-      } catch (error) {
-        alert("Error: " + error.message);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "users", userCredential.user.uid), { username: username });
+    }
+
+    async function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        currentUsername = userDoc.exists() ? userDoc.data().username : "Anonymous";
+
+        document.getElementById("authSection").style.display = "none";
+        document.getElementById("chatSection").style.display = "flex";
+
+        const q = query(collection(db, "messages"), orderBy("timestamp"));
+        onSnapshot(q, (snapshot) => {
+          const messagesDiv = document.getElementById("messages");
+          messagesDiv.innerHTML = "";
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "message";
+            if (data.username === currentUsername) msgDiv.classList.add("own");
+            msgDiv.innerText = `${data.username}: ${data.text}`;
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          });
+        });
       }
-    };
+    });
+
+    async function sendMessage() {
+      const msg = document.getElementById("messageInput").value;
+      if (!msg.trim()) return;
+
+      await addDoc(collection(db, "messages"), {
+        text: msg,
+        username: currentUsername,
+        timestamp: serverTimestamp()
+      });
+
+      document.getElementById("messageInput").value = "";
+    }
+
+    window.register = register;
+    window.login = login;
+    window.sendMessage = sendMessage;
   </script>
 </body>
 </html>
