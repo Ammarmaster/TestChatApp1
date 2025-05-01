@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Prodevopz Chat - Auth</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: url('https://source.unsplash.com/1600x900/?technology') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .auth-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border-radius: 15px;
+      padding: 30px;
+      width: 300px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      text-align: center;
+      color: white;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    button {
+      background-color: #1f8ef1;
+      color: white;
+      cursor: pointer;
+    }
+    .toggle {
+      color: #ddd;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .branding {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #00ffe0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-container">
+    <div class="branding">Prodevopz</div>
+    <h2 id="formTitle">Login</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="handleAuth()">Login</button>
+    <div class="toggle" onclick="toggleForm()">Don't have an account? Sign up</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXpJ1bDfzBqaYg4enm-GyrPdD6H_EEhUA",
+      authDomain: "chatapp-900cf.firebaseapp.com",
+      projectId: "chatapp-900cf",
+      storageBucket: "chatapp-900cf.firebasestorage.app",
+      messagingSenderId: "461600057635",
+      appId: "1:461600057635:web:3ef8e3ded53455ef80c496",
+      measurementId: "G-TXSSBKSFCC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const analytics = getAnalytics(app);
+
+    let isLogin = true;
+
+    window.toggleForm = () => {
+      isLogin = !isLogin;
+      document.getElementById("formTitle").innerText = isLogin ? "Login" : "Sign Up";
+      document.querySelector("button").innerText = isLogin ? "Login" : "Sign Up";
+      document.querySelector(".toggle").innerText = isLogin
+        ? "Don't have an account? Sign up"
+        : "Already have an account? Login";
+    };
+
+    window.handleAuth = async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        if (isLogin) {
+          await signInWithEmailAndPassword(auth, email, password);
+          alert("Logged in successfully!");
+        } else {
+          await createUserWithEmailAndPassword(auth, email, password);
+          alert("Account created successfully!");
+        }
+      } catch (error) {
+        alert("Error: " + error.message);
+      }
+    };
+  </script>
+</body>
+</html>
