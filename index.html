@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prodevopz Chat</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: url('https://wallpapercave.com/wp/wp7443286.jpg') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .glass {
+      backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      margin-top: 30px;
+      color: white;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      background: linear-gradient(to right, #00ffe0, #ff00e0);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    #messages {
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.2);
+    }
+    .msg {
+      margin-bottom: 8px;
+    }
+    input, button {
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      margin: 5px 0;
+    }
+    button {
+      background: #00ffe0;
+      color: black;
+      font-weight: bold;
+    }
+    #login-btn {
+      background: #ff00e0;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="glass">
+    <h1>Prodevopz Chat</h1>
+    <button id="login-btn">Login with Google</button>
+    <div id="user-name"></div>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXpJ1bDfzBqaYg4enm-GyrPdD6H_EEhUA",
+      authDomain: "chatapp-900cf.firebaseapp.com",
+      projectId: "chatapp-900cf",
+      storageBucket: "chatapp-900cf.appspot.com",
+      messagingSenderId: "461600057635",
+      appId: "1:461600057635:web:3ef8e3ded53455ef80c496",
+      measurementId: "G-TXSSBKSFCC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+
+    const loginBtn = document.getElementById("login-btn");
+    const userNameDiv = document.getElementById("user-name");
+    let currentUser = null;
+
+    loginBtn.onclick = () => {
+      signInWithPopup(auth, provider).then(result => {
+        currentUser = result.user;
+        userNameDiv.textContent = `Logged in as ${currentUser.displayName}`;
+        loginBtn.style.display = 'none';
+      });
+    };
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        currentUser = user;
+        userNameDiv.textContent = `Logged in as ${user.displayName}`;
+        loginBtn.style.display = 'none';
+      }
+    });
+
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+
+    const messagesRef = collection(db, "messages");
+    const q = query(messagesRef, orderBy("timestamp", "asc"));
+    onSnapshot(q, snapshot => {
+      messagesDiv.innerHTML = '';
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        const div = document.createElement("div");
+        div.classList.add("msg");
+        div.textContent = `${msg.name}: ${msg.text}`;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    });
+
+    window.sendMessage = async function () {
+      if (!currentUser || !messageInput.value.trim()) return;
+      await addDoc(messagesRef, {
+        name: currentUser.displayName,
+        text: messageInput.value,
+        timestamp: new Date()
+      });
+      messageInput.value = "";
+    }
+  </script>
+</body>
+</html>
